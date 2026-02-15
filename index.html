@@ -73,6 +73,10 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">金額(円)</label>
+                    <input type="number" id="expenseAmount" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="500">
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">目的</label>
                     <input type="text" id="expensePurpose" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="顧客訪問">
                 </div>
@@ -150,6 +154,7 @@
                             <th class="border border-gray-300 px-4 py-2 text-left">出発地</th>
                             <th class="border border-gray-300 px-4 py-2 text-left">目的地</th>
                             <th class="border border-gray-300 px-4 py-2 text-left">交通手段</th>
+                            <th class="border border-gray-300 px-4 py-2 text-right">金額</th>
                             <th class="border border-gray-300 px-4 py-2 text-right">ガソリン代</th>
                             <th class="border border-gray-300 px-4 py-2 text-right">高速代</th>
                             <th class="border border-gray-300 px-4 py-2 text-right">駐車場代</th>
@@ -258,10 +263,17 @@
     // 交通手段変更時の処理
     document.getElementById('expenseTransport').addEventListener('change', function() {
         const carExpenses = document.getElementById('carExpenses');
+        const expenseAmount = document.getElementById('expenseAmount');
+        
         if (this.value === '車') {
             carExpenses.classList.remove('hidden');
+            expenseAmount.disabled = true;
+            expenseAmount.value = '';
+            expenseAmount.parentElement.classList.add('opacity-50');
         } else {
             carExpenses.classList.add('hidden');
+            expenseAmount.disabled = false;
+            expenseAmount.parentElement.classList.remove('opacity-50');
             document.getElementById('gasolineCost').value = '';
             document.getElementById('highwayCost').value = '';
             document.getElementById('parkingCost').value = '';
@@ -275,6 +287,7 @@
         const to = document.getElementById('expenseTo').value;
         const transport = document.getElementById('expenseTransport').value;
         const purpose = document.getElementById('expensePurpose').value;
+        const amount = document.getElementById('expenseAmount').value;
         const gasolineCost = document.getElementById('gasolineCost').value;
         const highwayCost = document.getElementById('highwayCost').value;
         const parkingCost = document.getElementById('parkingCost').value;
@@ -289,6 +302,11 @@
                 alert('車の場合は、ガソリン代、高速代、駐車場代のいずれか1つ以上を入力してください');
                 return;
             }
+        } else {
+            if (!amount) {
+                alert('金額を入力してください');
+                return;
+            }
         }
 
         expenses.push({
@@ -298,6 +316,7 @@
             to,
             transport,
             purpose,
+            amount: amount || '',
             gasolineCost: gasolineCost || '',
             highwayCost: highwayCost || '',
             parkingCost: parkingCost || ''
@@ -309,10 +328,13 @@
         document.getElementById('expenseTo').value = '';
         document.getElementById('expenseTransport').value = '電車';
         document.getElementById('expensePurpose').value = '';
+        document.getElementById('expenseAmount').value = '';
         document.getElementById('gasolineCost').value = '';
         document.getElementById('highwayCost').value = '';
         document.getElementById('parkingCost').value = '';
         document.getElementById('carExpenses').classList.add('hidden');
+        document.getElementById('expenseAmount').disabled = false;
+        document.getElementById('expenseAmount').parentElement.classList.remove('opacity-50');
 
         updateDisplay();
         autoSave();
@@ -377,10 +399,11 @@
             let html = '';
             
             expenses.forEach(exp => {
+                const amount = Number(exp.amount) || 0;
                 const gasCost = Number(exp.gasolineCost) || 0;
                 const highCost = Number(exp.highwayCost) || 0;
                 const parkCost = Number(exp.parkingCost) || 0;
-                totalTransport += gasCost + highCost + parkCost;
+                totalTransport += amount + gasCost + highCost + parkCost;
                 
                 html += `
                     <tr class="hover:bg-gray-50">
@@ -388,6 +411,7 @@
                         <td class="border border-gray-300 px-4 py-2">${exp.from}</td>
                         <td class="border border-gray-300 px-4 py-2">${exp.to}</td>
                         <td class="border border-gray-300 px-4 py-2">${exp.transport}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-right">${amount ? amount.toLocaleString() + '円' : '-'}</td>
                         <td class="border border-gray-300 px-4 py-2 text-right">${gasCost ? gasCost.toLocaleString() + '円' : '-'}</td>
                         <td class="border border-gray-300 px-4 py-2 text-right">${highCost ? highCost.toLocaleString() + '円' : '-'}</td>
                         <td class="border border-gray-300 px-4 py-2 text-right">${parkCost ? parkCost.toLocaleString() + '円' : '-'}</td>
@@ -402,7 +426,7 @@
             html += `
                 <tr class="bg-indigo-50 font-bold">
                     <td colspan="4" class="border border-gray-300 px-4 py-2 text-right">交通費合計</td>
-                    <td colspan="3" class="border border-gray-300 px-4 py-2 text-right">${totalTransport.toLocaleString()}円</td>
+                    <td colspan="4" class="border border-gray-300 px-4 py-2 text-right">${totalTransport.toLocaleString()}円</td>
                     <td colspan="2" class="border border-gray-300"></td>
                 </tr>
             `;
@@ -459,7 +483,7 @@
         if (expenses.length > 0 || advancePayments.length > 0) {
             totalSection.classList.remove('hidden');
             const transportTotal = expenses.reduce((sum, exp) => {
-                return sum + (Number(exp.gasolineCost) || 0) + (Number(exp.highwayCost) || 0) + (Number(exp.parkingCost) || 0);
+                return sum + (Number(exp.amount) || 0) + (Number(exp.gasolineCost) || 0) + (Number(exp.highwayCost) || 0) + (Number(exp.parkingCost) || 0);
             }, 0);
             const advanceTotal = advancePayments.reduce((sum, ap) => sum + (Number(ap.amount) || 0), 0);
             document.getElementById('grandTotal').textContent = (transportTotal + advanceTotal).toLocaleString() + '円';
@@ -515,20 +539,21 @@
 
         // 交通費セクション
         csvContent += '【交通費】\n';
-        csvContent += '日付,出発地,目的地,交通手段,ガソリン代,高速代,駐車場代,目的\n';
+        csvContent += '日付,出発地,目的地,交通手段,金額,ガソリン代,高速代,駐車場代,目的\n';
 
         let totalTransportCost = 0;
         expenses.forEach(exp => {
+            const amount = Number(exp.amount) || 0;
             const gasCost = Number(exp.gasolineCost) || 0;
             const highCost = Number(exp.highwayCost) || 0;
             const parkCost = Number(exp.parkingCost) || 0;
-            totalTransportCost += gasCost + highCost + parkCost;
+            totalTransportCost += amount + gasCost + highCost + parkCost;
 
             csvContent += `${exp.date},${exp.from},${exp.to},${exp.transport},`;
-            csvContent += `${gasCost || ''},${highCost || ''},${parkCost || ''},${exp.purpose || ''}\n`;
+            csvContent += `${amount || ''},${gasCost || ''},${highCost || ''},${parkCost || ''},${exp.purpose || ''}\n`;
         });
 
-        csvContent += `\n交通費合計,,,,,,,${totalTransportCost}円\n\n`;
+        csvContent += `\n交通費合計,,,,,,,,${totalTransportCost}円\n\n`;
 
         // 立替経費セクション
         csvContent += '【立替経費】\n';
