@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交通費・立替経費申請システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <div id="app" class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+            <!-- ヘッダー -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h1 class="text-3xl font-bold text-gray-800">交通費・立替経費申請システム</h1>
+                </div>
+                <div id="savedMessage" class="bg-green-100 text-green-700 px-4 py-2 rounded-lg flex items-center gap-2 hidden">
+                    <span>✓ 保存しました</span>
+                </div>
+            </div>
+
+```
+        <!-- 社員情報入力 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">社員名 *</label>
+                <input type="text" id="employeeName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="山田太郎">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">対象月 *</label>
+                <input type="month" id="month" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+        </div>
+
+        <!-- 交通費入力フォーム -->
+        <div class="bg-indigo-50 p-6 rounded-lg mb-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                </svg>
+                <h2 class="text-xl font-semibold text-gray-800">交通費を追加</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">日付 *</label>
+                    <input type="date" id="expenseDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">出発地 *</label>
+                    <input type="text" id="expenseFrom" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="東京駅">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">目的地 *</label>
+                    <input type="text" id="expenseTo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="品川駅">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">交通手段 *</label>
+                    <select id="expenseTransport" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <option>車</option>
+                        <option>電車</option>
+                        <option>バス</option>
+                        <option>徒歩</option>
+                        <option>同乗</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">目的</label>
+                    <input type="text" id="expensePurpose" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="顧客訪問">
+                </div>
+            </div>
+            
+            <!-- 車の場合の経費入力欄 -->
+            <div id="carExpenses" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">車利用時の経費（いずれか1つ以上必須）</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ガソリン代(円)</label>
+                        <input type="number" id="gasolineCost" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" placeholder="1000">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">高速代(円)</label>
+                        <input type="number" id="highwayCost" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" placeholder="800">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">駐車場代(円)</label>
+                        <input type="number" id="parkingCost" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" placeholder="500">
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="addExpense()" class="mt-4 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium">
+                <span>+</span>
+                交通費を追加
+            </button>
+        </div>
+
+        <!-- 立替経費入力フォーム -->
+        <div class="bg-green-50 p-6 rounded-lg mb-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h2 class="text-xl font-semibold text-gray-800">立替経費を追加</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">日付 *</label>
+                    <input type="date" id="advanceDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">項目 *</label>
+                    <input type="text" id="advanceCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="文房具、書籍、会議費など">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">金額(円) *</label>
+                    <input type="number" id="advanceAmount" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="1500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">詳細</label>
+                    <input type="text" id="advanceDescription" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="購入したものの詳細など">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">目的</label>
+                    <input type="text" id="advancePurpose" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="業務使用、会議準備など">
+                </div>
+            </div>
+            <button onclick="addAdvancePayment()" class="mt-4 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition flex items-center gap-2 font-medium">
+                <span>+</span>
+                立替経費を追加
+            </button>
+        </div>
+
+        <!-- 交通費一覧 -->
+        <div id="expensesList" class="mb-6 hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">交通費一覧</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse" id="expensesTable">
+                    <thead>
+                        <tr class="bg-indigo-100">
+                            <th class="border border-gray-300 px-4 py-2 text-left">日付</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">出発地</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">目的地</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">交通手段</th>
+                            <th class="border border-gray-300 px-4 py-2 text-right">ガソリン代</th>
+                            <th class="border border-gray-300 px-4 py-2 text-right">高速代</th>
+                            <th class="border border-gray-300 px-4 py-2 text-right">駐車場代</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">目的</th>
+                            <th class="border border-gray-300 px-4 py-2 text-center">削除</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expensesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 立替経費一覧 -->
+        <div id="advancesList" class="mb-6 hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">立替経費一覧</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse" id="advancesTable">
+                    <thead>
+                        <tr class="bg-green-100">
+                            <th class="border border-gray-300 px-4 py-2 text-left">日付</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">項目</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">詳細</th>
+                            <th class="border border-gray-300 px-4 py-2 text-right">金額</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">目的</th>
+                            <th class="border border-gray-300 px-4 py-2 text-center">削除</th>
+                        </tr>
+                    </thead>
+                    <tbody id="advancesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 総合計表示 -->
+        <div id="totalSection" class="mb-6 p-6 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-lg border-2 border-indigo-300 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">総合計</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-sm text-gray-600 mb-1">交通費合計</div>
+                    <div class="text-2xl font-bold text-indigo-600" id="totalTransport">0円</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-sm text-gray-600 mb-1">立替経費合計</div>
+                    <div class="text-2xl font-bold text-green-600" id="totalAdvance">0円</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-sm text-gray-600 mb-1">総合計</div>
+                    <div class="text-3xl font-bold text-purple-600" id="grandTotal">0円</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div class="flex flex-wrap gap-4 justify-between items-center pt-4 border-t">
+            <div class="flex gap-3 flex-wrap items-center">
+                <button onclick="saveData()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition flex items-center gap-2 font-medium">
+                    <span>💾</span>
+                    保存
+                </button>
+                <button onclick="exportToCSV()" id="exportBtn" disabled class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <span>⬇</span>
+                    CSV出力
+                </button>
+                <a id="downloadLink" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium hidden">
+                    <span>⬇</span>
+                    CSVをダウンロード
+                </a>
+            </div>
+            <button onclick="clearAll()" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition flex items-center gap-2 font-medium">
+                <span>🗑</span>
+                全てクリア
+            </button>
+        </div>
+
+        <!-- 使い方説明 -->
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 class="font-semibold text-blue-900 mb-2">📌 使い方</h3>
+            <ul class="text-sm text-blue-800 space-y-1">
+                <li>1. 社員名・対象月を入力してください</li>
+                <li>2. 交通費や立替経費を1ヶ月分まとめて入力できます</li>
+                <li>3. 車を選択した場合は、ガソリン代・高速代・駐車場代のいずれかを入力</li>
+                <li>4. 徒歩・同乗の場合は経費入力は不要です</li>
+                <li>5. 入力完了後「CSV出力」ボタンでファイルをダウンロード</li>
+                <li>6. データは自動的にブラウザに保存されます</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    let expenses = [];
+    let advancePayments = [];
+
+    // ページ読み込み時にデータを復元
+    window.addEventListener('load', () => {
+        const savedData = localStorage.getItem('transportExpenses');
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            document.getElementById('employeeName').value = parsed.employeeName || '';
+            document.getElementById('month').value = parsed.month || '';
+            expenses = parsed.expenses || [];
+            advancePayments = parsed.advancePayments || [];
+            updateDisplay();
+        }
+    });
+
+    // 交通手段変更時の処理
+    document.getElementById('expenseTransport').addEventListener('change', function() {
+        const carExpenses = document.getElementById('carExpenses');
+        if (this.value === '車') {
+            carExpenses.classList.remove('hidden');
+        } else {
+            carExpenses.classList.add('hidden');
+            document.getElementById('gasolineCost').value = '';
+            document.getElementById('highwayCost').value = '';
+            document.getElementById('parkingCost').value = '';
+        }
+    });
+
+    // 交通費追加
+    function addExpense() {
+        const date = document.getElementById('expenseDate').value;
+        const from = document.getElementById('expenseFrom').value;
+        const to = document.getElementById('expenseTo').value;
+        const transport = document.getElementById('expenseTransport').value;
+        const purpose = document.getElementById('expensePurpose').value;
+        const gasolineCost = document.getElementById('gasolineCost').value;
+        const highwayCost = document.getElementById('highwayCost').value;
+        const parkingCost = document.getElementById('parkingCost').value;
+
+        if (!date || !from || !to || !transport) {
+            alert('日付、出発地、目的地、交通手段は必須項目です');
+            return;
+        }
+
+        if (transport === '車') {
+            if (!gasolineCost && !highwayCost && !parkingCost) {
+                alert('車の場合は、ガソリン代、高速代、駐車場代のいずれか1つ以上を入力してください');
+                return;
+            }
+        }
+
+        expenses.push({
+            id: Date.now(),
+            date,
+            from,
+            to,
+            transport,
+            purpose,
+            gasolineCost: gasolineCost || '',
+            highwayCost: highwayCost || '',
+            parkingCost: parkingCost || ''
+        });
+
+        // フォームクリア
+        document.getElementById('expenseDate').value = '';
+        document.getElementById('expenseFrom').value = '';
+        document.getElementById('expenseTo').value = '';
+        document.getElementById('expenseTransport').value = '電車';
+        document.getElementById('expensePurpose').value = '';
+        document.getElementById('gasolineCost').value = '';
+        document.getElementById('highwayCost').value = '';
+        document.getElementById('parkingCost').value = '';
+        document.getElementById('carExpenses').classList.add('hidden');
+
+        updateDisplay();
+        autoSave();
+    }
+
+    // 立替経費追加
+    function addAdvancePayment() {
+        const date = document.getElementById('advanceDate').value;
+        const category = document.getElementById('advanceCategory').value;
+        const amount = document.getElementById('advanceAmount').value;
+        const description = document.getElementById('advanceDescription').value;
+        const purpose = document.getElementById('advancePurpose').value;
+
+        if (!date || !category || !amount) {
+            alert('日付、項目、金額は必須項目です');
+            return;
+        }
+
+        advancePayments.push({
+            id: Date.now(),
+            date,
+            category,
+            amount,
+            description,
+            purpose
+        });
+
+        // フォームクリア
+        document.getElementById('advanceDate').value = '';
+        document.getElementById('advanceCategory').value = '';
+        document.getElementById('advanceAmount').value = '';
+        document.getElementById('advanceDescription').value = '';
+        document.getElementById('advancePurpose').value = '';
+
+        updateDisplay();
+        autoSave();
+    }
+
+    // 交通費削除
+    function deleteExpense(id) {
+        expenses = expenses.filter(exp => exp.id !== id);
+        updateDisplay();
+        autoSave();
+    }
+
+    // 立替経費削除
+    function deleteAdvancePayment(id) {
+        advancePayments = advancePayments.filter(ap => ap.id !== id);
+        updateDisplay();
+        autoSave();
+    }
+
+    // 表示更新
+    function updateDisplay() {
+        // 交通費テーブル
+        const expensesTableBody = document.getElementById('expensesTableBody');
+        const expensesList = document.getElementById('expensesList');
+        
+        if (expenses.length > 0) {
+            expensesList.classList.remove('hidden');
+            let totalTransport = 0;
+            let html = '';
+            
+            expenses.forEach(exp => {
+                const gasCost = Number(exp.gasolineCost) || 0;
+                const highCost = Number(exp.highwayCost) || 0;
+                const parkCost = Number(exp.parkingCost) || 0;
+                totalTransport += gasCost + highCost + parkCost;
+                
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-300 px-4 py-2">${exp.date}</td>
+                        <td class="border border-gray-300 px-4 py-2">${exp.from}</td>
+                        <td class="border border-gray-300 px-4 py-2">${exp.to}</td>
+                        <td class="border border-gray-300 px-4 py-2">${exp.transport}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-right">${gasCost ? gasCost.toLocaleString() + '円' : '-'}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-right">${highCost ? highCost.toLocaleString() + '円' : '-'}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-right">${parkCost ? parkCost.toLocaleString() + '円' : '-'}</td>
+                        <td class="border border-gray-300 px-4 py-2">${exp.purpose}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-center">
+                            <button onclick="deleteExpense(${exp.id})" class="text-red-600 hover:text-red-800">🗑</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                <tr class="bg-indigo-50 font-bold">
+                    <td colspan="4" class="border border-gray-300 px-4 py-2 text-right">交通費合計</td>
+                    <td colspan="3" class="border border-gray-300 px-4 py-2 text-right">${totalTransport.toLocaleString()}円</td>
+                    <td colspan="2" class="border border-gray-300"></td>
+                </tr>
+            `;
+            
+            expensesTableBody.innerHTML = html;
+            document.getElementById('totalTransport').textContent = totalTransport.toLocaleString() + '円';
+        } else {
+            expensesList.classList.add('hidden');
+        }
+
+        // 立替経費テーブル
+        const advancesTableBody = document.getElementById('advancesTableBody');
+        const advancesList = document.getElementById('advancesList');
+        
+        if (advancePayments.length > 0) {
+            advancesList.classList.remove('hidden');
+            let totalAdvance = 0;
+            let html = '';
+            
+            advancePayments.forEach(ap => {
+                const amount = Number(ap.amount) || 0;
+                totalAdvance += amount;
+                
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-300 px-4 py-2">${ap.date}</td>
+                        <td class="border border-gray-300 px-4 py-2">${ap.category}</td>
+                        <td class="border border-gray-300 px-4 py-2">${ap.description}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-right">${amount.toLocaleString()}円</td>
+                        <td class="border border-gray-300 px-4 py-2">${ap.purpose}</td>
+                        <td class="border border-gray-300 px-4 py-2 text-center">
+                            <button onclick="deleteAdvancePayment(${ap.id})" class="text-red-600 hover:text-red-800">🗑</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                <tr class="bg-green-50 font-bold">
+                    <td colspan="3" class="border border-gray-300 px-4 py-2 text-right">立替経費合計</td>
+                    <td class="border border-gray-300 px-4 py-2 text-right">${totalAdvance.toLocaleString()}円</td>
+                    <td colspan="2" class="border border-gray-300"></td>
+                </tr>
+            `;
+            
+            advancesTableBody.innerHTML = html;
+            document.getElementById('totalAdvance').textContent = totalAdvance.toLocaleString() + '円';
+        } else {
+            advancesList.classList.add('hidden');
+        }
+
+        // 総合計
+        const totalSection = document.getElementById('totalSection');
+        if (expenses.length > 0 || advancePayments.length > 0) {
+            totalSection.classList.remove('hidden');
+            const transportTotal = expenses.reduce((sum, exp) => {
+                return sum + (Number(exp.gasolineCost) || 0) + (Number(exp.highwayCost) || 0) + (Number(exp.parkingCost) || 0);
+            }, 0);
+            const advanceTotal = advancePayments.reduce((sum, ap) => sum + (Number(ap.amount) || 0), 0);
+            document.getElementById('grandTotal').textContent = (transportTotal + advanceTotal).toLocaleString() + '円';
+        } else {
+            totalSection.classList.add('hidden');
+        }
+
+        // エクスポートボタンの有効/無効
+        const exportBtn = document.getElementById('exportBtn');
+        if (expenses.length > 0 || advancePayments.length > 0) {
+            exportBtn.disabled = false;
+        } else {
+            exportBtn.disabled = true;
+        }
+    }
+
+    // 自動保存
+    function autoSave() {
+        const employeeName = document.getElementById('employeeName').value;
+        const month = document.getElementById('month').value;
+        
+        localStorage.setItem('transportExpenses', JSON.stringify({
+            employeeName,
+            month,
+            expenses,
+            advancePayments
+        }));
+    }
+
+    // 手動保存
+    function saveData() {
+        autoSave();
+        const savedMessage = document.getElementById('savedMessage');
+        savedMessage.classList.remove('hidden');
+        setTimeout(() => {
+            savedMessage.classList.add('hidden');
+        }, 2000);
+    }
+
+    // CSV出力
+    function exportToCSV() {
+        const employeeName = document.getElementById('employeeName').value;
+        const month = document.getElementById('month').value;
+
+        if (!employeeName || !month) {
+            alert('社員名、対象月を入力してください');
+            return;
+        }
+
+        let csvContent = '\ufeff'; // BOM for Excel
+        csvContent += `社員名,${employeeName}\n`;
+        csvContent += `対象月,${month}\n\n`;
+
+        // 交通費セクション
+        csvContent += '【交通費】\n';
+        csvContent += '日付,出発地,目的地,交通手段,ガソリン代,高速代,駐車場代,目的\n';
+
+        let totalTransportCost = 0;
+        expenses.forEach(exp => {
+            const gasCost = Number(exp.gasolineCost) || 0;
+            const highCost = Number(exp.highwayCost) || 0;
+            const parkCost = Number(exp.parkingCost) || 0;
+            totalTransportCost += gasCost + highCost + parkCost;
+
+            csvContent += `${exp.date},${exp.from},${exp.to},${exp.transport},`;
+            csvContent += `${gasCost || ''},${highCost || ''},${parkCost || ''},${exp.purpose || ''}\n`;
+        });
+
+        csvContent += `\n交通費合計,,,,,,,${totalTransportCost}円\n\n`;
+
+        // 立替経費セクション
+        csvContent += '【立替経費】\n';
+        csvContent += '日付,項目,詳細,金額,目的\n';
+
+        let totalAdvancePayment = 0;
+        advancePayments.forEach(ap => {
+            const amount = Number(ap.amount) || 0;
+            totalAdvancePayment += amount;
+            csvContent += `${ap.date},${ap.category},${ap.description || ''},${amount},${ap.purpose || ''}\n`;
+        });
+
+        csvContent += `\n立替経費合計,,,,${totalAdvancePayment}円\n\n`;
+        csvContent += `総合計,,,,${totalTransportCost + totalAdvancePayment}円\n`;
+
+        // Blobを作成してダウンロード
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = url;
+        downloadLink.download = `交通費・立替経費申請_${employeeName}_${month}.csv`;
+        downloadLink.classList.remove('hidden');
+
+        // 自動ダウンロードも試行
+        const tempLink = document.createElement('a');
+        tempLink.href = url;
+        tempLink.download = `交通費・立替経費申請_${employeeName}_${month}.csv`;
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+    }
+
+    // 全てクリア
+    function clearAll() {
+        if (confirm('全てのデータを削除してもよろしいですか?')) {
+            expenses = [];
+            advancePayments = [];
+            document.getElementById('employeeName').value = '';
+            document.getElementById('month').value = '';
+            localStorage.removeItem('transportExpenses');
+            updateDisplay();
+            document.getElementById('downloadLink').classList.add('hidden');
+        }
+    }
+
+    // 社員名・月の変更時に自動保存
+    document.getElementById('employeeName').addEventListener('change', autoSave);
+    document.getElementById('month').addEventListener('change', autoSave);
+</script>
+```
+
+</body>
+</html>
